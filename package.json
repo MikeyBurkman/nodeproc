@@ -1,0 +1,22 @@
+{
+  "name": "process",
+  "version": "1.0.0",
+  "description": "Simpler handling of external processes",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MikeyBurkman/process.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MikeyBurkman/process/issues"
+  },
+  "homepage": "https://github.com/MikeyBurkman/process",
+  "dependencies": {
+    "bluebird": "^3.0.5"
+  }
+}
