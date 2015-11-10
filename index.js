@@ -71,8 +71,8 @@ function Processes() {
   this.killRemaining = function killRemaining(signal) {
     signal = signal || 'SIGKILL';
     return new Promise(function(resolve) {
-      Object.keys(runningProcs).forEach(function(procId) {
-        var proc = runningProcs[procId];
+      Object.keys(runningProcs).forEach(function(procPid) {
+        var proc = runningProcs[procPid];
         if (proc) {
           proc.kill(signal);
           delete runningProcs[procPid];
