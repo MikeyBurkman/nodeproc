@@ -17,7 +17,7 @@ function Processes() {
     var commandArgs = args.commandArgs || [];
     var cwd = args.cwd;
     var ignoreExitStatusCode = args.ignoreExitStatusCode;
-    var spawnArgs = args.spawnArgs || { // stdio is not exactly flexible right now...
+    var spawnArgs = args.spawnArgs || {
       cwd: cwd,
       env: process.env
     };
@@ -33,15 +33,27 @@ function Processes() {
 
     return new Promise(function(resolve, reject, onCancel) {
       proc.on('error', function(err) {
-        var errMsg = 'Error running [' + procName + ']\n' + err;
-        reject(new Error(errMsg));
+        reject(new Error({
+          procName: procName,
+          error: err,
+          toString: function() {
+            return 'Error running [' + this.procName + ']\n' + this.error;
+          }
+        }));
       })
       .on('close', function(exitCode) {
         if (exitCode == 0 || ignoreExitStatusCode) {
           resolve(exitCode);
         } else {
-          var errMsg = 'Error running [' + procName + ']\n\tExit Code = ' + exitCode + '\n' + stderr;
-          reject(new Error(errMsg));
+          //var errMsg = 'Error running [' + procName + ']\n\tExit Code = ' + exitCode + '\n' + stderr;
+          reject(new Error({
+            procName: procName,
+            exitCode: exitCode,
+            stderr: stderr,
+            toString: function() {
+              return 'Error running [' + this.procName + ']\n\tExit Code = ' + this.exitCode + '\n' + this.stderr;
+            }
+          }));
         }
       });
       
@@ -57,10 +69,12 @@ function Processes() {
         stderr += data.toString(encoding);
       });
 
-      onCancel(function() {
-        delete runningProcs[procPid];
-        proc.kill('SIGKILL');
-      });
+      if (onCancel) {
+        onCancel(function() {
+          delete runningProcs[procPid];
+          proc.kill('SIGKILL');
+        });
+      }
 
     })
     .finally(function() {
