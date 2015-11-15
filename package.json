@@ -4,7 +4,7 @@
   "description": "Simpler handling of external processes",
   "main": "index.js",
   "scripts": {
-    "test": "node test/test.js"
+    "test": "mocha test/test.js"
   },
   "repository": {
     "type": "git",
@@ -18,5 +18,8 @@
   "homepage": "https://github.com/MikeyBurkman/process",
   "dependencies": {
     "bluebird": "^3.0.5"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.3"
   }
 }

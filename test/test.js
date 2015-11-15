@@ -1,42 +1,41 @@
 var Processes = require('../index');
 var path = require('path');
 
-// TODO: Mocha! Also, flesh out the tests more.
-
-var processes = new Processes();
-
 var node = process.argv[0];
 var successFile = 'success.js';
 var failureFile = 'failure.js';
 
-// Test success
-processes.spawn({
-  command: node,
-  args: [path.resolve(__dirname, successFile)]
-}).then(function() {
-  console.log('Finished basic args test');
-});
-
-processes.spawn({
-  command: node,
-  args: 'success.js',
-  cwd: __dirname
-}).then(function() {
-  console.log('Finished with cwd test');
-});
-
-// Test failure
-processes.spawn({
-  command: node,
-  args: path.resolve(__dirname, failureFile)
-}).then(function() {
-  throw new Error('Did not fail like it should have')
-}).catch(function(err) {
-  if (err.exitCode === 1) {
-    console.log('Finished basic exit code failure test');
-  } else {
-    throw err;
-  }
+describe('Processes', function() {
+  var processes = new Processes();
+  
+  it('Should handle basic arguments', function() {
+    return processes.spawn({
+      command: node,
+      args: [path.resolve(__dirname, successFile)]
+    })
+  });
+  
+  it('Should handle cwd', function() {
+    return processes.spawn({
+      command: node,
+      args: 'success.js',
+      cwd: __dirname
+    })
+  });
+  
+  it('Should handle a process that returns an error exit code', function() {
+    return processes.spawn({
+      command: node,
+      args: path.resolve(__dirname, failureFile)
+    }).then(function() {
+      throw new Error('Did not fail like it should have')
+    }).catch(function(err) {
+      if (err.exitCode !== 1) {
+        throw err;
+      }
+    })
+  });
+  
 });
 
 // Use this as a stdout or stderr destination to record process output
