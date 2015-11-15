@@ -42,7 +42,7 @@ process.spawn({
 process.spawn({
   command: 'npm',
   args: ['doesnotexit'],
-  ignoreExitStatusCode: true
+  ignoreExitCode: true
 }).catch(function(err) {
   console.log('Got error! ', err);
   console.log('Process ID: ', err.procId);
@@ -59,5 +59,6 @@ process.spawn({
   console.log('Finished');
 });
 
-// More docs to come
 ```
+
+See the tests for more examples
