@@ -1,0 +1,1 @@
+console.log('success', process.argv.slice(2));

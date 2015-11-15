@@ -3,56 +3,72 @@
 // Keeps track of running processes and allows for easily killing them.
 // Promises are bluebird promises and can be canclled to kill the process, but only if Bluebird was configured to enable cancelling
 
+var child_process = require('child_process');
+var util = require('util');
+var Promise = require('bluebird');
+  
 module.exports = Processes;
 
 function Processes() {
-  var child_process = require('child_process');
-  var Promise = require('bluebird');
 
   // Mapping of pid -> process object -- so we can kill running processes on errors
   var runningProcs = {};
 
   this.spawn = function spawn(args) {
-    var command = args.command;
-    var commandArgs = args.commandArgs || [];
-    var cwd = args.cwd;
-    var ignoreExitStatusCode = args.ignoreExitStatusCode;
-    var spawnArgs = args.spawnArgs || {
-      cwd: cwd,
-      env: process.env
-    };
+  
+    if (typeof args === 'string') {
+      var split = args.split(' ');
+      args = {
+        command: split[0],
+        args: split.slice(1)
+      };
+    }
     
-    spawnArgs.stdio = [process.stdin, 'pipe', 'pipe'] // Pipe stdout and stderr so we can handle those separately
+    var command = args.command;
+    var commandArgs = args.args || [];
+    if (!Array.isArray(commandArgs)) {
+      commandArgs = [commandArgs];
+    }
+    
+    var cwd = args.cwd;
+    var env = args.env || process.env;
+    var ignoreExitStatusCode = args.ignoreExitStatusCode;
     var procName = args.procName || command + commandArgs.join(' ');
+    
+    var stdin = args.stdin || 'ignore';
+    var stdout = args.stdout || process.stdout;
+    var stderr = args.stderr || process.stderr;
+    
+    var spawnArgs = {
+      cwd: cwd,
+      env: env,
+      stdio: [stdin, 'pipe', 'pipe']
+    };
 
     var proc = child_process.spawn(command, commandArgs, spawnArgs);
+    
     var procPid = proc.pid;
     runningProcs[procPid] = proc;
 
-    var stderr = ''; // Keep track of stderr output
+    var stderrStr = ''; // Keep track of stderr output
 
     return new Promise(function(resolve, reject, onCancel) {
       proc.on('error', function(err) {
-        reject(new Error({
+        reject(new ProcessError('Error running [' + procName + ']\n' + err, {
           procName: procName,
-          error: err,
-          toString: function() {
-            return 'Error running [' + this.procName + ']\n' + this.error;
-          }
+          cause: err
         }));
       })
       .on('close', function(exitCode) {
         if (exitCode == 0 || ignoreExitStatusCode) {
-          resolve(exitCode);
+          resolve({
+            exitCode: exitCode
+          });
         } else {
-          //var errMsg = 'Error running [' + procName + ']\n\tExit Code = ' + exitCode + '\n' + stderr;
-          reject(new Error({
+          reject(new ProcessError('Error running [' + procName + ']\n\tExit Code = ' + exitCode + '\n' + stderrStr, {
             procName: procName,
             exitCode: exitCode,
-            stderr: stderr,
-            toString: function() {
-              return 'Error running [' + this.procName + ']\n\tExit Code = ' + this.exitCode + '\n' + this.stderr;
-            }
+            stderr: stderrStr
           }));
         }
       });
@@ -60,13 +76,13 @@ function Processes() {
       proc.stdout.on('data', function(data, encoding) {
         // Make sure we don't keep sending data to stdout if we've "killed" this process already
         if (runningProcs[procPid]) {
-          process.stdout.write(data, encoding);
+          stdout.write(data, encoding);
         }
       });
       
       proc.stderr.on('data', function(data, encoding) {
-        process.stderr.write(data, encoding);
-        stderr += data.toString(encoding);
+        stderr.write(data, encoding);
+        stderrStr += data.toString(encoding);
       });
 
       if (onCancel) {
@@ -95,4 +111,21 @@ function Processes() {
       resolve();
     });
   }
+  
+  this.spawnedPids = function() {
+    return Object.keys(runningProcs);
+  }
 }
+
+function ProcessError(message, data) {
+  var self = this;
+  Error.captureStackTrace(this, this.constructor);
+  this.name = this.constructor.name;
+  this.message = message;
+  data = data || {};
+  Object.keys(data).map(function(key) {
+    self[key] = data[key];
+  });
+}
+util.inherits(ProcessError, Error);
+
