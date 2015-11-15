@@ -32,7 +32,7 @@ function Processes() {
     
     var cwd = args.cwd;
     var env = args.env || process.env;
-    var ignoreExitStatusCode = args.ignoreExitStatusCode;
+    var ignoreExitCode = args.ignoreExitCode;
     var procName = args.procName || command + commandArgs.join(' ');
     
     var stdin = args.stdin || 'ignore';
@@ -61,7 +61,7 @@ function Processes() {
         }));
       })
       .on('close', function(exitCode) {
-        if (exitCode == 0 || ignoreExitStatusCode) {
+        if (exitCode == 0 || ignoreExitCode) {
           resolve({
             exitCode: exitCode,
             procId: procPid
