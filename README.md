@@ -7,8 +7,10 @@ var Processes = require('processes');
 var processes = new Processes();
 
 // Most basic use
-processes.spawn('npm ls').then(function() {
+processes.spawn('npm ls').then(function(results) {
   console.log('Finished');
+  console.log('Process ID: ', results.procId);
+  console.log('Exit code: ', results.exitCode);
 });
 
 // Slightly more complicated
@@ -34,6 +36,18 @@ process.spawn({
   stdout: captureStdout
 }).then(funnction() {
   console.log('Finished');
+});
+
+// Catch errors using a Promise catch function
+process.spawn({
+  command: 'npm',
+  args: ['doesnotexit'],
+  ignoreExitStatusCode: true
+}).catch(function(err) {
+  console.log('Got error! ', err);
+  console.log('Process ID: ', err.procId);
+  console.log('Exit code: ', err.exitCode);
+  console.log('Stderr: ', err.stderr);
 });
 
 // Can ignore error exit status codes, and always resolve the process
