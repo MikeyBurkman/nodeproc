@@ -6,7 +6,7 @@ var path = require('path');
 var processes = new Processes();
 
 var node = process.argv[0];
-var successFile = 'success.js';c
+var successFile = 'success.js';
 var failureFile = 'failure.js';
 
 // Test success
@@ -19,7 +19,7 @@ processes.spawn({
 
 processes.spawn({
   command: node,
-  args: successFile,
+  args: 'success.js',
   cwd: __dirname
 }).then(function() {
   console.log('Finished with cwd test');

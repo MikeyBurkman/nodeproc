@@ -26,8 +26,8 @@ function Processes() {
     
     var command = args.command;
     var commandArgs = args.args || [];
-    if (!Array.isArray(commandArgs)) {
-      commandArgs = [commandArgs];
+    if (typeof commandArgs === 'string') {
+      commandArgs = commandArgs.split(' ');
     }
     
     var cwd = args.cwd;
@@ -56,18 +56,21 @@ function Processes() {
       proc.on('error', function(err) {
         reject(new ProcessError('Error running [' + procName + ']\n' + err, {
           procName: procName,
+          procId: procPid,
           cause: err
         }));
       })
       .on('close', function(exitCode) {
         if (exitCode == 0 || ignoreExitStatusCode) {
           resolve({
-            exitCode: exitCode
+            exitCode: exitCode,
+            procId: procPid
           });
         } else {
           reject(new ProcessError('Error running [' + procName + ']\n\tExit Code = ' + exitCode + '\n' + stderrStr, {
             procName: procName,
             exitCode: exitCode,
+            procId: procPid,
             stderr: stderrStr
           }));
         }
