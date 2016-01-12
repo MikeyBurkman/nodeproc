@@ -51,6 +51,7 @@ function Processes() {
     runningProcs[procPid] = proc;
 
     var stderrStr = ''; // Keep track of stderr output
+    var cancelled = false;
 
     return new Promise(function(resolve, reject, onCancel) {
       proc.on('error', function(err) {
@@ -66,7 +67,7 @@ function Processes() {
             exitCode: exitCode,
             procId: procPid
           });
-        } else {
+        } else if (!cancelled) {
           reject(new ProcessError('Error running [' + procName + ']\n\tExit Code = ' + exitCode + '\n' + stderrStr, {
             procName: procName,
             exitCode: exitCode,
@@ -90,6 +91,7 @@ function Processes() {
 
       if (onCancel) {
         onCancel(function() {
+          cancelled = true;
           delete runningProcs[procPid];
           proc.kill('SIGKILL');
         });
