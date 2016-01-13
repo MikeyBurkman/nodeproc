@@ -1,7 +1,7 @@
 // Container used for spawning and managing external processes and wrapping them in promises.
-// Will print out stdout and stderr automatically (will be configurable in the future)
+// Will print out stdout and stderr automatically (can be configured)
 // Keeps track of running processes and allows for easily killing them.
-// Promises are bluebird promises and can be canclled to kill the process, but only if Bluebird was configured to enable cancelling
+// Promises are bluebird promises and can be cancelled to kill the process, but only if Bluebird was configured to enable cancelling
 
 var child_process = require('child_process');
 var util = require('util');
@@ -62,7 +62,7 @@ function Processes() {
         }));
       })
       .on('close', function(exitCode) {
-        if (exitCode == 0 || ignoreExitCode) {
+        if (exitCode === 0 || ignoreExitCode) {
           resolve({
             exitCode: exitCode,
             procId: procPid
@@ -101,7 +101,7 @@ function Processes() {
     .finally(function() {
       delete runningProcs[procPid];
     });
-  }
+  };
 
   this.killRemaining = function killRemaining(signal) {
     signal = signal || 'SIGKILL';
@@ -115,11 +115,11 @@ function Processes() {
       });
       resolve();
     });
-  }
+  };
   
   this.spawnedPids = function() {
     return Object.keys(runningProcs);
-  }
+  };
 }
 
 function ProcessError(message, data) {

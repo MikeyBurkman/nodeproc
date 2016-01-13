@@ -1,26 +1,26 @@
 {
-  "name": "process",
+  "name": "nodeproc",
   "version": "1.0.0",
-  "description": "Simpler handling of external processes",
+  "description": "Simpler handling of spawning processes",
   "main": "index.js",
   "scripts": {
     "test": "mocha test/test.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/MikeyBurkman/process.git"
+    "url": "https://github.com/MikeyBurkman/nodeproc.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/MikeyBurkman/process/issues"
+    "url": "https://github.com/MikeyBurkman/nodeproc/issues"
   },
-  "homepage": "https://github.com/MikeyBurkman/process",
+  "homepage": "https://github.com/MikeyBurkman/nodeproc",
   "dependencies": {
-    "bluebird": "^3.0.5"
+    "bluebird": "3.0.5"
   },
   "devDependencies": {
-    "mocha": "^2.3.3",
-    "should": "^7.1.1"
+    "mocha": "2.3.3",
+    "should": "7.1.1"
   }
 }

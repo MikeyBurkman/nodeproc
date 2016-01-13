@@ -73,7 +73,7 @@ describe('Processes', function() {
       command: node,
       args: path.resolve(__dirname, failureFile)
     }).then(function() {
-      throw new Error('Did not fail like it should have')
+      throw new Error('Did not fail like it should have');
     }).catch(function(err) {
       err.should.have.property('exitCode', 1);
       err.should.have.property('stderr', 'error');
