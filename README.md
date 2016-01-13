@@ -1,10 +1,10 @@
-# process
-Simpler way to handle NodeJs processes
+# nodeproc
+Simpler way to handle spawning processes in NodeJs
 
 ```js
-var Processes = require('processes');
+var Nodeproc = require('nodeproc');
 
-var processes = new Processes();
+var processes = new Nodeproc();
 
 // Most basic use
 processes.spawn('npm ls').then(function(results) {
@@ -30,7 +30,7 @@ var captureStdout = {
     console.log('Got data: ', data.toString(encoding));
   }
 };
-process.spawn({
+processes.spawn({
   command: 'npm',
   args: 'ls' // Can either be an array or a space-delimited string
   stdout: captureStdout
@@ -39,7 +39,7 @@ process.spawn({
 });
 
 // Catch errors using a Promise catch function
-process.spawn({
+processes.spawn({
   command: 'npm',
   args: ['doesnotexit'],
   ignoreExitCode: true
@@ -51,7 +51,7 @@ process.spawn({
 });
 
 // Can ignore error exit status codes, and always resolve the process
-process.spawn({
+processes.spawn({
   command: 'npm',
   args: ['doesnotexit'],
   ignoreExitStatusCode: true
