@@ -1,17 +1,17 @@
-var Processes = require('../index');
+var Nodeproc = require('../index');
 var path = require('path');
 require('should');
 
 var node = process.argv[0];
-var successFile = 'success.js';
-var failureFile = 'failure.js';
+var successFile = 'scripts/success.js';
+var failureFile = 'scripts/failure.js';
+var longRunningFile = 'scripts/longRunning.js';
 
-describe('Processes', function() {
-  var processes = new Processes();
+describe('Basic functionality', function() {
+  var processes = new Nodeproc();
   
   it('Should handle a simple command string', function() {
-    var file = path.resolve(__dirname, successFile);
-    var command = node + ' ' + file;
+    var command = buildCommand(successFile);
     return processes.spawn(command).then(function(results) {
       results.should.have.property('exitCode', 0);
     });
@@ -38,7 +38,7 @@ describe('Processes', function() {
   it('Should handle cwd', function() {
     return processes.spawn({
       command: node,
-      args: 'success.js',
+      args: successFile,
       cwd: __dirname
     }).then(function(results) {
       results.should.have.property('exitCode', 0);
@@ -56,6 +56,11 @@ describe('Processes', function() {
       out.str.should.eql('success hello');
     });
   });
+});
+
+describe('Error handling functionality', function() {
+  
+  var processes = new Nodeproc();
   
   it('Should capture stderr', function() {
     var out = new StreamToString();
@@ -95,6 +100,49 @@ describe('Processes', function() {
   
 });
 
+describe('Process invalidation functionality', function() {
+  
+    it('Should kill other processes on error if configured to', function() {
+      var processes = new Nodeproc({invalidateOnError: true});
+      
+      // Create a long running process, and then create another process that dies.
+      // The long-running process should be killed
+      
+      var longRunning = processes.spawn(buildCommand(longRunningFile))
+        .then(function() {
+          throw new Error('Long running process should have been killed when the other process died');
+        })
+        .catch(function(err) {
+          err.should.have.property('cancelled', true);
+        });
+      
+      processes.spawn(buildCommand(failureFile)).catch(function() {
+        // Expected
+      });
+      
+      return longRunning;
+      
+    });
+    
+    it('Should not allow new processes to be created once invalidated', function() {
+      var processes = new Nodeproc({invalidateOnError: true});
+      
+      return processes.spawn(buildCommand(failureFile))
+        .catch(function() {
+          // Expected
+          
+          return processes.spawn(buildCommand(successFile));
+        })
+        .then(function() {
+          throw new Error('Should have gotten an error trying to spawn a new process after being invalidated')
+        })
+        .catch(function(err) {
+          err.should.have.property('cancelled', true);
+        });
+    });
+  
+});
+
 // Use this as a stdout or stderr destination to record process output
 function StreamToString() {
   this.str = '';
@@ -104,4 +152,8 @@ function StreamToString() {
   this.toString = function() {
     return this.str;
   };
+}
+
+function buildCommand(scriptFile) {
+  return node + ' ' + path.resolve(__dirname, scriptFile);
 }
