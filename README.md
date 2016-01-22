@@ -1,6 +1,7 @@
 # nodeproc
 Simpler way to handle spawning processes in NodeJs
 
+[![Build Status](https://travis-ci.org/MikeyBurkman/nodeproc.svg?branch=master)](https://travis-ci.org/MikeyBurkman/nodeproc)
 [![Dependency Status](https://david-dm.org/MikeyBurkman/nodeproc.svg)](https://david-dm.org/MikeyBurkman/nodeproc)
 
 ```js
