@@ -1,6 +1,8 @@
 # nodeproc
 Simpler way to handle spawning processes in NodeJs
 
+[![Dependency Status](https://david-dm.org/MikeyBurkman/nodeproc.svg)](https://david-dm.org/MikeyBurkman/nodeproc)
+
 ```js
 var Nodeproc = require('nodeproc');
 
