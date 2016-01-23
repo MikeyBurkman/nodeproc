@@ -5,7 +5,7 @@
     "eval_code": false,
     "end-with-newline": true,
     "indent_with_tabs": true,
-    "jslint_happy": true,
+    "jslint_happy": false,
     "keep_array_indentation": false,
     "keep_function_indentation": false,
     "max_preserve_newlines": 3,

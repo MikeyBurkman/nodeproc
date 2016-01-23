@@ -1,6 +1,6 @@
 {
   "name": "nodeproc",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Simpler handling of spawning processes",
   "main": "index.js",
   "scripts": {
@@ -10,14 +10,18 @@
     "type": "git",
     "url": "https://github.com/MikeyBurkman/nodeproc.git"
   },
-  "author": "",
+  "author": "MikeyBurkman",
+  "keywords": [
+    "spawn",
+    "process"
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/MikeyBurkman/nodeproc/issues"
   },
   "homepage": "https://github.com/MikeyBurkman/nodeproc",
   "dependencies": {
-    "bluebird": "3.0.5"
+    "promise": "^7.1.1"
   },
   "devDependencies": {
     "mocha": "2.3.3",

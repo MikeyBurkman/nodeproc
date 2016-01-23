@@ -62,6 +62,13 @@ processes.spawn({
   console.log('Finished');
 });
 
+// Can kill processes prematurely
+processes.spawn('npm ls').kill();
+
+// Set invalidateOnError=true when creating the Nodeproc instance, and when one process errors,
+//  it will automatically kill all other running processes, and will prevent others from being created.
+var processes2 = new Nodeproc({invalidateOnError = true});
+
 ```
 
 See the tests for more examples

@@ -1,11 +1,10 @@
 // Container used for spawning and managing external processes and wrapping them in promises.
 // Will print out stdout and stderr automatically (can be configured)
-// Keeps track of running processes and allows for easily killing them.
-// Promises are bluebird promises and can be cancelled to kill the process, but only if Bluebird was configured to enable cancelling
+// Keeps track of running processes and allows for easily killing them via the cancel() method.
 
-var child_process = require('child_process');
+var childProcess = require('child_process');
 var util = require('util');
-var Promise = require('bluebird');
+var Promise = require('promise');
 
 module.exports = Nodeproc;
 
@@ -16,10 +15,12 @@ function Nodeproc(args) {
 	// Whether this instance becomes invalid when an individual process hits an error
 	var invalidateOnError = args.invalidateOnError;
 
-	// Mapping of pid -> process object -- so we can kill running processes on errors
+	// Mapping of pid -> promise for spawned process -- so we can kill running processes on errors
 	var runningProcs = {};
 
 	var invalid = false; // If invalid, this instance can no longer spawn new processes
+
+	var nodeproc = this;
 
 	this.spawn = function spawn(args) {
 
@@ -42,6 +43,15 @@ function Nodeproc(args) {
 		var ignoreExitCode = args.ignoreExitCode;
 		var procName = args.procName || command + commandArgs.join(' ');
 
+		if (invalid) {
+			var err = new ProcessError('Nodeproc instance has been invalidated, cannot spawn new process', {
+				invalidated: true,
+				procName: procName
+			});
+
+			return Promise.reject(err);
+		}
+
 		var stdin = args.stdin || 'ignore';
 		var stdout = args.stdout || process.stdout;
 		var stderr = args.stderr || process.stderr;
@@ -52,84 +62,109 @@ function Nodeproc(args) {
 			stdio: [stdin, 'pipe', 'pipe']
 		};
 
-		var proc = child_process.spawn(command, commandArgs, spawnArgs);
+		var proc = childProcess.spawn(command, commandArgs, spawnArgs);
 
 		var procPid = proc.pid;
-		runningProcs[procPid] = proc;
 
 		var stderrStr = ''; // Keep track of stderr output
 		var cancelled = false;
 
-		var promise = new Promise(function (resolve, reject) {
-				proc.on('error', function (err) {
+		var promise = new Promise(function(resolve, reject) {
+				proc.on('error', function(err) {
 						reject(new ProcessError('Error running [' + procName + ']\n' + err, {
 							procName: procName,
 							procId: procPid,
 							cause: err
 						}));
+
+						if (invalidateOnError) {
+							nodeproc.invalidate();
+						}
 					})
-					.on('close', function (exitCode) {
+					.on('close', function(exitCode) {
 						if (exitCode === 0 || ignoreExitCode) {
+							// Happy path!
 							resolve({
 								exitCode: exitCode,
 								procId: procPid
 							});
-						} else if (!cancelled) {
+
+						} else if (cancelled) {
+							// Note: don't invalidate on cancel
+							reject(new ProcessError('Process was cancelled: [' + procName + ']', {
+								procName: procName,
+								cancelled: true
+							}));
+
+						} else {
 							reject(new ProcessError('Error running [' + procName + ']\n\tExit Code = ' + exitCode + '\n' + stderrStr, {
 								procName: procName,
 								exitCode: exitCode,
 								procId: procPid,
 								stderr: stderrStr
 							}));
+
+							if (invalidateOnError) {
+								nodeproc.invalidate();
+							}
 						}
 					});
 
-				proc.stdout.on('data', function (data, encoding) {
+				proc.stdout.on('data', function(data, encoding) {
 					// Make sure we don't keep sending data to stdout if we've "killed" this process already
 					if (runningProcs[procPid]) {
 						stdout.write(data, encoding);
 					}
 				});
 
-				proc.stderr.on('data', function (data, encoding) {
+				proc.stderr.on('data', function(data, encoding) {
 					stderr.write(data, encoding);
 					stderrStr += data.toString(encoding);
 				});
 
-				if (onCancel) {
-					onCancel(function () {
-						cancelled = true;
-						delete runningProcs[procPid];
-						proc.kill('SIGKILL');
-					});
-				}
-
 			})
-			.finally(function () {
+			.finally(function() {
 				delete runningProcs[procPid];
 			});
 
-		promise.cancel =
+		runningProcs[procPid] = promise;
 
-			return promise;
+		promise.cancel = function() {
+			cancelled = true;
+			proc.kill('SIGKILL');
+		};
+
+		promise.procPid = procPid;
+		promise.procName = procName;
+
+		return promise;
 	};
 
-	this.killRemaining = function killRemaining(signal) {
-		signal = signal || 'SIGKILL';
-		return new Promise(function (resolve) {
-			Object.keys(runningProcs).forEach(function (procPid) {
-				var proc = runningProcs[procPid];
-				if (proc) {
-					proc.kill(signal);
-					delete runningProcs[procPid];
-				}
-			});
-			resolve();
+	this.invalidate = function() {
+		invalid = true;
+		return nodeproc.killRemaining();
+	};
+
+	this.killRemaining = function killRemaining() {
+		Object.keys(runningProcs).forEach(function(procPid) {
+			var proc = runningProcs[procPid];
+			if (proc) {
+				proc.cancel();
+			}
 		});
+
+		return Promise.resolve();
 	};
 
-	this.spawnedPids = function () {
-		return Object.keys(runningProcs);
+	this.running = function() {
+		var res = {};
+		Object.keys(runningProcs).forEach(function(procPid) {
+			var proc = runningProcs[procPid];
+			if (proc) {
+				res[procPid] = proc.procName;
+			}
+		});
+		return res;
 	};
 }
 
@@ -139,7 +174,7 @@ function ProcessError(message, data) {
 	this.name = this.constructor.name;
 	this.message = message;
 	data = data || {};
-	Object.keys(data).map(function (key) {
+	Object.keys(data).map(function(key) {
 		self[key] = data[key];
 	});
 }
