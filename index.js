@@ -179,3 +179,5 @@ function ProcessError(message, data) {
 	});
 }
 util.inherits(ProcessError, Error);
+
+Nodeproc.ProcessError = ProcessError;
